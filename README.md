@@ -1,18 +1,47 @@
 # US States API
 
-Built by **Husein-Abdulraheem** for the INF653 final project.
+Node.js REST API for U.S. state data using Express and MongoDB.
 
-This project is a Node.js REST API for US state data using Express and MongoDB. The assignment requires the `/states/` API route, a `States.js` Mongoose model with `stateCode` and `funfacts`, a `verifyStates` middleware, and a catch-all 404 route that returns HTML or JSON depending on the request headers. The project should also be deployed on Glitch with environment variables stored outside GitHub. fileciteturn1file0 fileciteturn1file1
+## Features
 
-## Files
+- `GET /api/states/`
+- `GET /api/states/?contig=true`
+- `GET /api/states/?contig=false`
+- `GET /api/states/:state`
+- `GET /api/states/:state/funfact`
+- `GET /api/states/:state/capital`
+- `GET /api/states/:state/nickname`
+- `GET /api/states/:state/population`
+- `GET /api/states/:state/admission`
+- `POST /api/states/:state/funfact`
+- `PATCH /api/states/:state/funfact`
+- `DELETE /api/states/:state/funfact`
 
-- `server.js` — main Express app
+## Project Files
+
+- `server.js` — Express app and route handlers
 - `config/db.js` — MongoDB connection helper
-- `models/States.js` — Mongoose schema/model
-- `middleware/verifyStates.js` — state-code validator
-- `scripts/seedFunFacts.js` — inserts fun facts for the 5 required states
-- `public/index.html` — root HTML page
-- `statesData.json` — copy the provided states dataset into the project root
+- `models/States.js` — Mongoose model
+- `middleware/verifyStates.js` — Validates state abbreviations
+- `scripts/seedFunFacts.js` — Seeds required fun facts
+- `public/index.html` — Root HTML page
+- `statesData.json` — State data file provided for the project
+
+## Requirements
+
+- Node.js
+- MongoDB Atlas database
+- `statesData.json` in the project root
+- `.env` file in the project root
+
+## Environment Variables
+
+Create a `.env` file in the project root:
+
+```env
+DATABASE_URI=mongodb+srv://USERNAME:PASSWORD@cluster0.yourcluster.mongodb.net/states?retryWrites=true&w=majority
+PORT=3000
+```
 
 ## Setup
 
@@ -21,10 +50,9 @@ This project is a Node.js REST API for US state data using Express and MongoDB. 
    npm install
    ```
 
-2. Create a `.env` file in the project root:
+2. Seed the required fun facts:
    ```bash
-   DATABASE_URI=mongodb+srv://USERNAME:PASSWORD@cluster0.yourcluster.mongodb.net/states?retryWrites=true&w=majority
-   PORT=3000
+   npm run seed
    ```
 
 3. Start the server:
@@ -32,43 +60,24 @@ This project is a Node.js REST API for US state data using Express and MongoDB. 
    npm start
    ```
 
-4. Seed the required fun facts:
-   ```bash
-   npm run seed
-   ```
+## Testing
 
-## Endpoints
+Open these routes in the browser or Postman:
 
-- `GET /states/`
-- `GET /states/?contig=true`
-- `GET /states/?contig=false`
-- `GET /states/:state`
-- `GET /states/:state/funfact`
-- `GET /states/:state/capital`
-- `GET /states/:state/nickname`
-- `GET /states/:state/population`
-- `GET /states/:state/admission`
-- `POST /states/:state/funfact`
-- `PATCH /states/:state/funfact`
-- `DELETE /states/:state/funfact`
+- `http://localhost:3000/`
+- `http://localhost:3000/api/states/`
+- `http://localhost:3000/api/states/KS`
 
-## Glitch deployment
+## Deployment
 
-Glitch supports environment variables and can import projects from GitHub; Glitch’s own materials describe environment-variable support and GitHub import/export as part of the platform. citeturn113803search0
+Set `DATABASE_URI` in your hosting environment and run the app with:
 
-### Steps
-
-1. Push this project to GitHub.
-2. On Glitch, create a new project and import from GitHub.
-3. Open the Glitch project settings and add `DATABASE_URI` as an environment variable.
-4. Do not upload `.env` to GitHub.
-5. Make sure `statesData.json` is in the project root on Glitch.
-6. Run the seed script once so the required states have fun facts.
-7. Test the API at `https://your-project-name.glitch.me/states/`.
+```bash
+npm start
+```
 
 ## Notes
 
-- State abbreviations are checked case-insensitively.
-- `index` for PATCH and DELETE is one-based.
-- The root page is a public HTML page.
+- State abbreviations are case-insensitive.
+- `index` for PATCH and DELETE routes is one-based.
 - Unknown routes return a 404 response.
