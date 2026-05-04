@@ -78,12 +78,13 @@ const formatPopulation = (num) =>
 // ===== 404 HANDLER =====
 
 const send404 = (req, res) => {
-  if (req.accepts('html')) {
-    return res
-      .status(404)
-      .sendFile(path.join(__dirname, 'public', 'index.html'));
+  res.status(404);
+
+  if (req.headers.accept && req.headers.accept.includes('text/html')) {
+    return res.sendFile(path.join(__dirname, 'public', 'index.html'));
   }
-  return res.status(404).json({ error: '404 Not Found' });
+
+  return res.json({ error: '404 Not Found' });
 };
 
 // ===== ROUTES =====
@@ -300,6 +301,7 @@ api.delete('/states/:state/funfact', verifyStates, async (req, res) => {
 // ===== ROOT + 404 =====
 
 app.get('/', (req, res) => {
+  res.type('html');
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
