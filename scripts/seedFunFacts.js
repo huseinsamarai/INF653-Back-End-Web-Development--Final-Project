@@ -44,24 +44,37 @@ const seedData = [
       'Colorado has more than two thousand named mountains.',
     ],
   },
+
+  // 🔥 REQUIRED FOR TESTS
+  {
+    stateCode: 'RI',
+    funfacts: [],
+  },
 ];
 
 async function seed() {
-  await connectDB();
+  try {
+    await connectDB();
 
-  for (const item of seedData) {
-    await States.updateOne(
-      { stateCode: item.stateCode },
-      { $setOnInsert: { stateCode: item.stateCode }, $addToSet: { funfacts: { $each: item.funfacts } } },
-      { upsert: true }
-    );
+    for (const item of seedData) {
+      await States.updateOne(
+        { stateCode: item.stateCode },
+        {
+          $setOnInsert: {
+            stateCode: item.stateCode,
+            funfacts: item.funfacts,
+          },
+        },
+        { upsert: true }
+      );
+    }
+
+    console.log('✅ Seed data added successfully.');
+    process.exit(0);
+  } catch (error) {
+    console.error('❌ Seed error:', error);
+    process.exit(1);
   }
-
-  console.log('Seed data added successfully.');
-  process.exit(0);
 }
 
-seed().catch((error) => {
-  console.error(error);
-  process.exit(1);
-});
+seed();
