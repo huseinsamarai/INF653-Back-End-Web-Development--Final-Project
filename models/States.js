@@ -22,9 +22,6 @@ const statesSchema = new Schema(
         message: 'funfacts must be an array of strings',
       },
     },
-  },
-  {
-    timestamps: true,
   }
 );
 

@@ -6,7 +6,7 @@ function verifyStates(req, res, next) {
   const code = String(req.params.state || '').toUpperCase();
 
   if (!validCodes.includes(code)) {
-    return res.status(404).json({ error: '404 Not Found' });
+    return res.status(404).json({ message: 'Invalid state abbreviation parameter' });
   }
 
   req.code = code;
