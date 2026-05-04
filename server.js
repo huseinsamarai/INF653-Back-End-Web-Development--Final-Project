@@ -12,11 +12,13 @@ const PORT = process.env.PORT || 3000;
 
 const statesData = require('./statesData.json');
 
+// ===== BASIC MIDDLEWARE =====
 app.disable('x-powered-by');
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(express.static(path.join(__dirname, 'public')));
 
+// ===== CORS =====
 app.use((req, res, next) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PATCH,DELETE,OPTIONS');
@@ -24,67 +26,51 @@ app.use((req, res, next) => {
   next();
 });
 
+// ===== HELPERS =====
 const normalizeCode = (code) => String(code || '').toUpperCase();
 
 const getStateName = (code) => {
-  const state = statesData.find((s) => normalizeCode(s.code) === normalizeCode(code));
+  const state = statesData.find(
+    (s) => normalizeCode(s.code) === normalizeCode(code)
+  );
   return state ? state.state : code;
 };
 
-// ===== MERGE FUNCTIONS =====
+const formatPopulation = (num) =>
+  Number(num).toLocaleString('en-US');
 
-const mergeForList = (stateData, funfactDoc) => {
-  const merged = { ...stateData };
+// ===== MERGE LOGIC (FIXED) =====
 
-  if (funfactDoc && funfactDoc.funfacts?.length > 0) {
-    merged.funfacts = funfactDoc.funfacts;
-  }
-
-  return merged;
-};
-
-const mergeForSingle = (stateData, funfactDoc) => {
-  const merged = { ...stateData };
-
-  if (funfactDoc) {
-    merged.funfacts = Array.isArray(funfactDoc.funfacts)
+// ✅ Always include funfacts (even empty array)
+const mergeState = (stateData, funfactDoc) => {
+  return {
+    ...stateData,
+    funfacts: Array.isArray(funfactDoc?.funfacts)
       ? funfactDoc.funfacts
-      : [];
-  }
-
-  return merged;
+      : [],
+  };
 };
 
-const getFunfactDoc = (code) =>
-  States.findOne({ stateCode: normalizeCode(code) }).lean();
-
-const getMergedState = async (code, mode = 'single') => {
+const getMergedState = async (code) => {
   const stateData = statesData.find(
     (s) => normalizeCode(s.code) === normalizeCode(code)
   );
 
   if (!stateData) return null;
 
-  const doc = await getFunfactDoc(code);
+  const doc = await States.findOne({
+    stateCode: normalizeCode(code),
+  }).lean();
 
-  return mode === 'list'
-    ? mergeForList(stateData, doc)
-    : mergeForSingle(stateData, doc);
+  return mergeState(stateData, doc);
 };
 
-const formatPopulation = (num) =>
-  Number(num).toLocaleString('en-US');
+// ===== 404 HANDLER (FIXED) =====
 
-// ===== 404 HANDLER =====
-
+// ✅ Always return HTML (test requirement)
 const send404 = (req, res) => {
   res.status(404);
-
-  if (req.headers.accept && req.headers.accept.includes('text/html')) {
-    return res.sendFile(path.join(__dirname, 'public', 'index.html'));
-  }
-
-  return res.json({ error: '404 Not Found' });
+  return res.sendFile(path.join(__dirname, 'public', 'index.html'));
 };
 
 // ===== ROUTES =====
@@ -95,29 +81,36 @@ api.get('/', (req, res) => {
   res.json({ message: 'States API' });
 });
 
-// ===== GET ALL =====
+// ===== GET ALL STATES =====
 api.get('/states', async (req, res, next) => {
   try {
     const { contig } = req.query;
 
     const docs = await States.find({}).lean();
+
     const map = new Map(
       docs.map((d) => [normalizeCode(d.stateCode), d.funfacts || []])
     );
 
     let results = statesData.map((state) => {
       const facts = map.get(normalizeCode(state.code)) || [];
-      const merged = { ...state };
 
-      if (facts.length > 0) merged.funfacts = facts;
-
-      return merged;
+      return {
+        ...state,
+        ...(facts.length > 0 && { funfacts: facts }),
+      };
     });
 
     if (contig === 'true') {
-      results = results.filter((s) => !['AK', 'HI'].includes(normalizeCode(s.code)));
-    } else if (contig === 'false') {
-      results = results.filter((s) => ['AK', 'HI'].includes(normalizeCode(s.code)));
+      results = results.filter(
+        (s) => !['AK', 'HI'].includes(normalizeCode(s.code))
+      );
+    }
+
+    if (contig === 'false') {
+      results = results.filter(
+        (s) => ['AK', 'HI'].includes(normalizeCode(s.code))
+      );
     }
 
     res.json(results);
@@ -149,7 +142,7 @@ api.get('/states/:state/funfact', verifyStates, async (req, res) => {
     });
   }
 
-  if (!state.funfacts || state.funfacts.length === 0) {
+  if (!state.funfacts.length) {
     return res.status(404).json({
       message: `No Fun Facts found for ${state.state}`,
     });
@@ -195,32 +188,32 @@ api.get('/states/:state/admission', verifyStates, async (req, res) => {
 api.post('/states/:state/funfact', verifyStates, async (req, res) => {
   const { funfacts } = req.body;
 
-  if (!funfacts)
+  if (!funfacts) {
     return res.status(400).json({
       message: 'State fun facts value required',
     });
+  }
 
-  if (!Array.isArray(funfacts))
+  if (!Array.isArray(funfacts)) {
     return res.status(400).json({
       message: 'State fun facts value must be an array',
     });
+  }
 
   let doc = await States.findOne({ stateCode: req.code });
 
   if (!doc) {
-    doc = new States({ stateCode: req.code, funfacts });
+    doc = new States({
+      stateCode: req.code,
+      funfacts,
+    });
   } else {
     doc.funfacts.push(...funfacts);
   }
 
   await doc.save();
 
-  res.status(201).json({
-    _id: doc._id,
-    stateCode: doc.stateCode,
-    funfacts: doc.funfacts,
-    __v: doc.__v,
-  });
+  res.status(201).json(doc);
 });
 
 // ===== PATCH =====
@@ -228,39 +221,38 @@ api.patch('/states/:state/funfact', verifyStates, async (req, res) => {
   const { index, funfact } = req.body;
   const name = getStateName(req.code);
 
-  if (!index)
+  if (!index) {
     return res.status(400).json({
       message: 'State fun fact index value required',
     });
+  }
 
-  if (!funfact)
+  if (!funfact) {
     return res.status(400).json({
       message: 'State fun fact value required',
     });
+  }
 
   const doc = await States.findOne({ stateCode: req.code });
 
-  if (!doc || !doc.funfacts.length)
+  if (!doc || !doc.funfacts.length) {
     return res.status(404).json({
       message: `No Fun Facts found for ${name}`,
     });
+  }
 
   const i = index - 1;
 
-  if (!doc.funfacts[i])
+  if (!doc.funfacts[i]) {
     return res.status(404).json({
       message: `No Fun Fact found at that index for ${name}`,
     });
+  }
 
   doc.funfacts[i] = funfact;
   await doc.save();
 
-  res.json({
-    _id: doc._id,
-    stateCode: doc.stateCode,
-    funfacts: doc.funfacts,
-    __v: doc.__v,
-  });
+  res.json(doc);
 });
 
 // ===== DELETE =====
@@ -268,56 +260,52 @@ api.delete('/states/:state/funfact', verifyStates, async (req, res) => {
   const { index } = req.body;
   const name = getStateName(req.code);
 
-  if (!index)
+  if (!index) {
     return res.status(400).json({
       message: 'State fun fact index value required',
     });
+  }
 
   const doc = await States.findOne({ stateCode: req.code });
 
-  if (!doc || !doc.funfacts.length)
+  if (!doc || !doc.funfacts.length) {
     return res.status(404).json({
       message: `No Fun Facts found for ${name}`,
     });
+  }
 
   const i = index - 1;
 
-  if (!doc.funfacts[i])
+  if (!doc.funfacts[i]) {
     return res.status(404).json({
       message: `No Fun Fact found at that index for ${name}`,
     });
+  }
 
   doc.funfacts.splice(i, 1);
   await doc.save();
 
-  res.json({
-    _id: doc._id,
-    stateCode: doc.stateCode,
-    funfacts: doc.funfacts,
-    __v: doc.__v,
-  });
+  res.json(doc);
 });
 
-// ===== ROOT + 404 =====
-
+// ===== ROOT =====
 app.get('/', (req, res) => {
-  res.type('html');
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
+// ===== API =====
 app.use('/api', api);
 
-app.use((req, res) => {
-  send404(req, res);
-});
+// ===== 404 =====
+app.use(send404);
 
+// ===== ERROR =====
 app.use((err, req, res, next) => {
   console.error(err);
   res.status(500).json({ error: 'Server Error' });
 });
 
 // ===== START =====
-
 connectDB().then(() => {
   app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
