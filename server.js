@@ -39,15 +39,18 @@ const getStateName = (code) => {
 const formatPopulation = (num) =>
   Number(num).toLocaleString('en-US');
 
-// ===== MERGE (IMPORTANT FIX) =====
+// ===== MERGE LOGIC (FINAL FIX) =====
 const mergeForSingle = (stateData, funfactDoc) => {
-  return {
-    ...stateData,
-    // ALWAYS include funfacts for single state
-    funfacts: Array.isArray(funfactDoc?.funfacts)
+  const merged = { ...stateData };
+
+  // ✅ ONLY include funfacts if DB doc exists
+  if (funfactDoc) {
+    merged.funfacts = Array.isArray(funfactDoc.funfacts)
       ? funfactDoc.funfacts
-      : [],
-  };
+      : [];
+  }
+
+  return merged;
 };
 
 const getMergedState = async (code) => {
@@ -93,7 +96,7 @@ api.get('/states', async (req, res, next) => {
 
       const merged = { ...state };
 
-      // ONLY add funfacts if they exist
+      // ✅ ONLY include funfacts if they exist
       if (facts.length > 0) {
         merged.funfacts = facts;
       }
@@ -142,7 +145,7 @@ api.get('/states/:state/funfact', verifyStates, async (req, res) => {
     });
   }
 
-  if (!state.funfacts.length) {
+  if (!state.funfacts || state.funfacts.length === 0) {
     return res.status(404).json({
       message: `No Fun Facts found for ${state.state}`,
     });
