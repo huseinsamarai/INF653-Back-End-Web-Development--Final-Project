@@ -1,0 +1,25 @@
+{
+  "name": "inf653-states-api-by-husein-abdulraheem",
+  "version": "1.0.0",
+  "description": "Node.js REST API for US States data using Express and MongoDB",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js",
+    "seed": "node scripts/seedFunFacts.js"
+  },
+  "keywords": [
+    "express",
+    "mongodb",
+    "mongoose",
+    "states",
+    "api"
+  ],
+  "author": "Joshua Samuel",
+  "license": "MIT",
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "express": "^4.21.2",
+    "mongoose": "^9.0.1"
+  }
+}
