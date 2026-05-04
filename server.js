@@ -12,6 +12,7 @@ const PORT = process.env.PORT || 3000;
 
 const statesData = require('./statesData.json');
 
+app.disable('x-powered-by');
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(express.static(path.join(__dirname, 'public')));
@@ -59,11 +60,13 @@ function send404(req, res) {
   return res.status(404).json({ error: '404 Not Found' });
 }
 
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+const api = express.Router();
+
+api.get('/', (req, res) => {
+  res.json({ message: 'States API' });
 });
 
-app.get('/states', async (req, res, next) => {
+api.get('/states', async (req, res, next) => {
   try {
     const { contig } = req.query;
 
@@ -89,7 +92,7 @@ app.get('/states', async (req, res, next) => {
   }
 });
 
-app.get('/states/:state', verifyStates, async (req, res, next) => {
+api.get('/states/:state', verifyStates, async (req, res, next) => {
   try {
     const merged = await getMergedState(req.code);
 
@@ -103,7 +106,7 @@ app.get('/states/:state', verifyStates, async (req, res, next) => {
   }
 });
 
-app.get('/states/:state/funfact', verifyStates, async (req, res, next) => {
+api.get('/states/:state/funfact', verifyStates, async (req, res, next) => {
   try {
     const merged = await getMergedState(req.code);
 
@@ -121,7 +124,7 @@ app.get('/states/:state/funfact', verifyStates, async (req, res, next) => {
   }
 });
 
-app.get('/states/:state/capital', verifyStates, async (req, res, next) => {
+api.get('/states/:state/capital', verifyStates, async (req, res, next) => {
   try {
     const merged = await getMergedState(req.code);
 
@@ -138,7 +141,7 @@ app.get('/states/:state/capital', verifyStates, async (req, res, next) => {
   }
 });
 
-app.get('/states/:state/nickname', verifyStates, async (req, res, next) => {
+api.get('/states/:state/nickname', verifyStates, async (req, res, next) => {
   try {
     const merged = await getMergedState(req.code);
 
@@ -155,7 +158,7 @@ app.get('/states/:state/nickname', verifyStates, async (req, res, next) => {
   }
 });
 
-app.get('/states/:state/population', verifyStates, async (req, res, next) => {
+api.get('/states/:state/population', verifyStates, async (req, res, next) => {
   try {
     const merged = await getMergedState(req.code);
 
@@ -172,7 +175,7 @@ app.get('/states/:state/population', verifyStates, async (req, res, next) => {
   }
 });
 
-app.get('/states/:state/admission', verifyStates, async (req, res, next) => {
+api.get('/states/:state/admission', verifyStates, async (req, res, next) => {
   try {
     const merged = await getMergedState(req.code);
 
@@ -189,7 +192,7 @@ app.get('/states/:state/admission', verifyStates, async (req, res, next) => {
   }
 });
 
-app.post('/states/:state/funfact', verifyStates, async (req, res, next) => {
+api.post('/states/:state/funfact', verifyStates, async (req, res, next) => {
   try {
     const { funfacts } = req.body;
 
@@ -223,7 +226,7 @@ app.post('/states/:state/funfact', verifyStates, async (req, res, next) => {
   }
 });
 
-app.patch('/states/:state/funfact', verifyStates, async (req, res, next) => {
+api.patch('/states/:state/funfact', verifyStates, async (req, res, next) => {
   try {
     const { index, funfact } = req.body;
 
@@ -257,7 +260,7 @@ app.patch('/states/:state/funfact', verifyStates, async (req, res, next) => {
   }
 });
 
-app.delete('/states/:state/funfact', verifyStates, async (req, res, next) => {
+api.delete('/states/:state/funfact', verifyStates, async (req, res, next) => {
   try {
     const { index } = req.body;
 
@@ -289,6 +292,12 @@ app.delete('/states/:state/funfact', verifyStates, async (req, res, next) => {
   } catch (error) {
     return next(error);
   }
+});
+
+app.use('/api', api);
+
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 app.use((req, res) => {
