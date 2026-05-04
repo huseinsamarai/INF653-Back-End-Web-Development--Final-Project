@@ -39,12 +39,11 @@ const getStateName = (code) => {
 const formatPopulation = (num) =>
   Number(num).toLocaleString('en-US');
 
-// ===== MERGE LOGIC (FIXED) =====
-
-// ✅ Always include funfacts (even empty array)
-const mergeState = (stateData, funfactDoc) => {
+// ===== MERGE (IMPORTANT FIX) =====
+const mergeForSingle = (stateData, funfactDoc) => {
   return {
     ...stateData,
+    // ALWAYS include funfacts for single state
     funfacts: Array.isArray(funfactDoc?.funfacts)
       ? funfactDoc.funfacts
       : [],
@@ -62,19 +61,16 @@ const getMergedState = async (code) => {
     stateCode: normalizeCode(code),
   }).lean();
 
-  return mergeState(stateData, doc);
+  return mergeForSingle(stateData, doc);
 };
 
-// ===== 404 HANDLER (FIXED) =====
-
-// ✅ Always return HTML (test requirement)
+// ===== 404 =====
 const send404 = (req, res) => {
   res.status(404);
   return res.sendFile(path.join(__dirname, 'public', 'index.html'));
 };
 
 // ===== ROUTES =====
-
 const api = express.Router();
 
 api.get('/', (req, res) => {
@@ -95,10 +91,14 @@ api.get('/states', async (req, res, next) => {
     let results = statesData.map((state) => {
       const facts = map.get(normalizeCode(state.code)) || [];
 
-      return {
-        ...state,
-        ...(facts.length > 0 && { funfacts: facts }),
-      };
+      const merged = { ...state };
+
+      // ONLY add funfacts if they exist
+      if (facts.length > 0) {
+        merged.funfacts = facts;
+      }
+
+      return merged;
     });
 
     if (contig === 'true') {
@@ -213,7 +213,12 @@ api.post('/states/:state/funfact', verifyStates, async (req, res) => {
 
   await doc.save();
 
-  res.status(201).json(doc);
+  res.status(201).json({
+    _id: doc._id,
+    stateCode: doc.stateCode,
+    funfacts: doc.funfacts,
+    __v: doc.__v,
+  });
 });
 
 // ===== PATCH =====
@@ -252,7 +257,12 @@ api.patch('/states/:state/funfact', verifyStates, async (req, res) => {
   doc.funfacts[i] = funfact;
   await doc.save();
 
-  res.json(doc);
+  res.json({
+    _id: doc._id,
+    stateCode: doc.stateCode,
+    funfacts: doc.funfacts,
+    __v: doc.__v,
+  });
 });
 
 // ===== DELETE =====
@@ -285,7 +295,12 @@ api.delete('/states/:state/funfact', verifyStates, async (req, res) => {
   doc.funfacts.splice(i, 1);
   await doc.save();
 
-  res.json(doc);
+  res.json({
+    _id: doc._id,
+    stateCode: doc.stateCode,
+    funfacts: doc.funfacts,
+    __v: doc.__v,
+  });
 });
 
 // ===== ROOT =====
