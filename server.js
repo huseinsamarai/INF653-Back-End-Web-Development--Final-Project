@@ -39,12 +39,12 @@ const getStateName = (code) => {
 const formatPopulation = (num) =>
   Number(num).toLocaleString('en-US');
 
-// ===== MERGE LOGIC (FINAL FIX) =====
+// ===== MERGE FOR SINGLE (FIXED) =====
 const mergeForSingle = (stateData, funfactDoc) => {
   const merged = { ...stateData };
 
-  // ✅ ONLY include funfacts if DB doc exists
   if (funfactDoc) {
+    // Always include funfacts if doc exists (even empty)
     merged.funfacts = Array.isArray(funfactDoc.funfacts)
       ? funfactDoc.funfacts
       : [];
@@ -80,7 +80,7 @@ api.get('/', (req, res) => {
   res.json({ message: 'States API' });
 });
 
-// ===== GET ALL STATES =====
+// ===== GET ALL STATES (IMPORTANT RULE) =====
 api.get('/states', async (req, res, next) => {
   try {
     const { contig } = req.query;
@@ -96,7 +96,7 @@ api.get('/states', async (req, res, next) => {
 
       const merged = { ...state };
 
-      // ✅ ONLY include funfacts if they exist
+      // ONLY include if has actual values
       if (facts.length > 0) {
         merged.funfacts = facts;
       }
