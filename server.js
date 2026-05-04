@@ -39,12 +39,11 @@ const getStateName = (code) => {
 const formatPopulation = (num) =>
   Number(num).toLocaleString('en-US');
 
-// ===== MERGE FOR SINGLE (FIXED) =====
+// ===== MERGE LOGIC =====
 const mergeForSingle = (stateData, funfactDoc) => {
   const merged = { ...stateData };
 
   if (funfactDoc) {
-    // Always include funfacts if doc exists (even empty)
     merged.funfacts = Array.isArray(funfactDoc.funfacts)
       ? funfactDoc.funfacts
       : [];
@@ -67,10 +66,21 @@ const getMergedState = async (code) => {
   return mergeForSingle(stateData, doc);
 };
 
-// ===== 404 =====
+// ===== 404 HANDLER =====
 const send404 = (req, res) => {
   res.status(404);
-  return res.sendFile(path.join(__dirname, 'public', 'index.html'));
+
+  if (req.accepts('html')) {
+    return res
+      .type('html')
+      .sendFile(path.join(__dirname, 'public', 'index.html'));
+  }
+
+  if (req.accepts('json')) {
+    return res.json({ error: '404 Not Found' });
+  }
+
+  return res.type('txt').send('404 Not Found');
 };
 
 // ===== ROUTES =====
@@ -80,7 +90,7 @@ api.get('/', (req, res) => {
   res.json({ message: 'States API' });
 });
 
-// ===== GET ALL STATES (IMPORTANT RULE) =====
+// ===== GET ALL STATES =====
 api.get('/states', async (req, res, next) => {
   try {
     const { contig } = req.query;
@@ -96,7 +106,7 @@ api.get('/states', async (req, res, next) => {
 
       const merged = { ...state };
 
-      // ONLY include if has actual values
+      // ONLY include funfacts if they have values
       if (facts.length > 0) {
         merged.funfacts = facts;
       }
@@ -308,7 +318,10 @@ api.delete('/states/:state/funfact', verifyStates, async (req, res) => {
 
 // ===== ROOT =====
 app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+  res
+    .status(200)
+    .type('html')
+    .sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 // ===== API =====
