@@ -45,6 +45,16 @@ const htmlDoc = (title, body) => `<!DOCTYPE html>
 </body>
 </html>`;
 
+const rootHtml = htmlDoc(
+  'States API',
+  '<main><h1>States API</h1><p>Use the /api routes to access the data.</p></main>'
+);
+
+const notFoundHtml = htmlDoc(
+  '404 Not Found',
+  '<main><h1>404 Not Found</h1><p>The requested resource was not found.</p></main>'
+);
+
 const mergeForSingle = (stateData, funfactDoc) => {
   const merged = { ...stateData };
 
@@ -72,18 +82,13 @@ const getMergedState = async (code) => {
 };
 
 const send404 = (req, res) => {
-  res.status(404).type('html').send(
-    htmlDoc(
-      '404 Not Found',
-      '<main><h1>404 Not Found</h1><p>The requested resource was not found.</p></main>'
-    )
-  );
+  res.status(404).type('html').send(notFoundHtml);
 };
 
 const api = express.Router();
 
 api.get('/', (req, res) => {
-  res.json({ message: 'States API' });
+  res.status(200).type('html').send(rootHtml);
 });
 
 api.get('/states', async (req, res, next) => {
@@ -301,12 +306,7 @@ api.delete('/states/:state/funfact', verifyStates, async (req, res) => {
 });
 
 app.get('/', (req, res) => {
-  res.status(200).type('html').send(
-    htmlDoc(
-      'States API',
-      '<main><h1>States API</h1><p>Use the /api routes to access the data.</p></main>'
-    )
-  );
+  res.status(200).type('html').send(rootHtml);
 });
 
 app.use('/api', api);
