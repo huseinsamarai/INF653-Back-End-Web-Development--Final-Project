@@ -36,7 +36,7 @@ const getStateName = (code) => {
 
 const formatPopulation = (num) => Number(num).toLocaleString('en-US');
 
-const htmlPage = (title, body) => `<!DOCTYPE html>
+const htmlDoc = (title, body) => `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -75,10 +75,10 @@ const getMergedState = async (code) => {
   return mergeForSingle(stateData, doc);
 };
 
-// ===== 404 HANDLER =====
+// ===== 404 =====
 const send404 = (req, res) => {
   res.status(404).type('html').send(
-    htmlPage(
+    htmlDoc(
       '404 Not Found',
       '<main><h1>404 Not Found</h1><p>The requested resource was not found.</p></main>'
     )
@@ -319,7 +319,7 @@ api.delete('/states/:state/funfact', verifyStates, async (req, res) => {
 // ===== ROOT =====
 app.get('/', (req, res) => {
   res.status(200).type('html').send(
-    htmlPage(
+    htmlDoc(
       'States API',
       '<main><h1>States API</h1><p>Use the /api routes to access the data.</p></main>'
     )
