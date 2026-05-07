@@ -11,12 +11,10 @@ const PORT = process.env.PORT || 3000;
 
 const statesData = require('./statesData.json');
 
-// ===== BASIC MIDDLEWARE =====
 app.disable('x-powered-by');
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
-// ===== CORS =====
 app.use((req, res, next) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PATCH,DELETE,OPTIONS');
@@ -24,7 +22,6 @@ app.use((req, res, next) => {
   next();
 });
 
-// ===== HELPERS =====
 const normalizeCode = (code) => String(code || '').toUpperCase();
 
 const getStateName = (code) => {
@@ -48,7 +45,6 @@ const htmlDoc = (title, body) => `<!DOCTYPE html>
 </body>
 </html>`;
 
-// ===== MERGE LOGIC =====
 const mergeForSingle = (stateData, funfactDoc) => {
   const merged = { ...stateData };
 
@@ -75,7 +71,6 @@ const getMergedState = async (code) => {
   return mergeForSingle(stateData, doc);
 };
 
-// ===== 404 =====
 const send404 = (req, res) => {
   res.status(404).type('html').send(
     htmlDoc(
@@ -85,14 +80,12 @@ const send404 = (req, res) => {
   );
 };
 
-// ===== ROUTES =====
 const api = express.Router();
 
 api.get('/', (req, res) => {
   res.json({ message: 'States API' });
 });
 
-// ===== GET ALL STATES =====
 api.get('/states', async (req, res, next) => {
   try {
     const { contig } = req.query;
@@ -132,7 +125,6 @@ api.get('/states', async (req, res, next) => {
   }
 });
 
-// ===== SINGLE STATE =====
 api.get('/states/:state', verifyStates, async (req, res) => {
   const state = await getMergedState(req.code);
 
@@ -145,7 +137,6 @@ api.get('/states/:state', verifyStates, async (req, res) => {
   res.json(state);
 });
 
-// ===== FUNFACT =====
 api.get('/states/:state/funfact', verifyStates, async (req, res) => {
   const state = await getMergedState(req.code);
 
@@ -167,19 +158,16 @@ api.get('/states/:state/funfact', verifyStates, async (req, res) => {
   res.json({ funfact: random });
 });
 
-// ===== CAPITAL =====
 api.get('/states/:state/capital', verifyStates, async (req, res) => {
   const state = await getMergedState(req.code);
   res.json({ state: state.state, capital: state.capital_city });
 });
 
-// ===== NICKNAME =====
 api.get('/states/:state/nickname', verifyStates, async (req, res) => {
   const state = await getMergedState(req.code);
   res.json({ state: state.state, nickname: state.nickname });
 });
 
-// ===== POPULATION =====
 api.get('/states/:state/population', verifyStates, async (req, res) => {
   const state = await getMergedState(req.code);
   res.json({
@@ -188,7 +176,6 @@ api.get('/states/:state/population', verifyStates, async (req, res) => {
   });
 });
 
-// ===== ADMISSION =====
 api.get('/states/:state/admission', verifyStates, async (req, res) => {
   const state = await getMergedState(req.code);
   res.json({
@@ -197,7 +184,6 @@ api.get('/states/:state/admission', verifyStates, async (req, res) => {
   });
 });
 
-// ===== POST =====
 api.post('/states/:state/funfact', verifyStates, async (req, res) => {
   const { funfacts } = req.body;
 
@@ -234,7 +220,6 @@ api.post('/states/:state/funfact', verifyStates, async (req, res) => {
   });
 });
 
-// ===== PATCH =====
 api.patch('/states/:state/funfact', verifyStates, async (req, res) => {
   const { index, funfact } = req.body;
   const name = getStateName(req.code);
@@ -278,7 +263,6 @@ api.patch('/states/:state/funfact', verifyStates, async (req, res) => {
   });
 });
 
-// ===== DELETE =====
 api.delete('/states/:state/funfact', verifyStates, async (req, res) => {
   const { index } = req.body;
   const name = getStateName(req.code);
@@ -316,7 +300,6 @@ api.delete('/states/:state/funfact', verifyStates, async (req, res) => {
   });
 });
 
-// ===== ROOT =====
 app.get('/', (req, res) => {
   res.status(200).type('html').send(
     htmlDoc(
@@ -326,19 +309,14 @@ app.get('/', (req, res) => {
   );
 });
 
-// ===== API =====
 app.use('/api', api);
-
-// ===== 404 =====
 app.use(send404);
 
-// ===== ERROR =====
 app.use((err, req, res, next) => {
   console.error(err);
   res.status(500).json({ error: 'Server Error' });
 });
 
-// ===== START =====
 connectDB().then(() => {
   app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
