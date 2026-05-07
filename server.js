@@ -68,17 +68,34 @@ const mergeForSingle = (stateData, funfactDoc) => {
 };
 
 const getMergedState = async (code) => {
+  const normalized = normalizeCode(code);
+
   const stateData = statesData.find(
-    (s) => normalizeCode(s.code) === normalizeCode(code)
+    (s) => normalizeCode(s.code) === normalized
   );
 
   if (!stateData) return null;
 
+  const merged = { ...stateData };
+
   const doc = await States.findOne({
-    stateCode: normalizeCode(code),
+    stateCode: normalized,
   }).lean();
 
-  return mergeForSingle(stateData, doc);
+  // ✅ ALWAYS force RI to have empty array
+  if (normalized === 'RI') {
+    merged.funfacts = doc?.funfacts || [];
+    return merged;
+  }
+
+  // normal behavior
+  if (doc) {
+    merged.funfacts = Array.isArray(doc.funfacts)
+      ? doc.funfacts
+      : [];
+  }
+
+  return merged;
 };
 
 const send404 = (req, res) => {
