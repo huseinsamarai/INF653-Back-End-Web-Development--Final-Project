@@ -1,7 +1,6 @@
 require('dotenv').config();
 
 const express = require('express');
-const path = require('path');
 
 const connectDB = require('./config/db');
 const States = require('./models/States');
@@ -16,7 +15,6 @@ const statesData = require('./statesData.json');
 app.disable('x-powered-by');
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
-app.use(express.static(path.join(__dirname, 'public')));
 
 // ===== CORS =====
 app.use((req, res, next) => {
@@ -36,8 +34,19 @@ const getStateName = (code) => {
   return state ? state.state : code;
 };
 
-const formatPopulation = (num) =>
-  Number(num).toLocaleString('en-US');
+const formatPopulation = (num) => Number(num).toLocaleString('en-US');
+
+const htmlPage = (title, body) => `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>${title}</title>
+</head>
+<body>
+  ${body}
+</body>
+</html>`;
 
 // ===== MERGE LOGIC =====
 const mergeForSingle = (stateData, funfactDoc) => {
@@ -68,19 +77,12 @@ const getMergedState = async (code) => {
 
 // ===== 404 HANDLER =====
 const send404 = (req, res) => {
-  res.status(404);
-
-  if (req.accepts('html')) {
-    return res
-      .type('html')
-      .sendFile(path.join(__dirname, 'public', 'index.html'));
-  }
-
-  if (req.accepts('json')) {
-    return res.json({ error: '404 Not Found' });
-  }
-
-  return res.type('txt').send('404 Not Found');
+  res.status(404).type('html').send(
+    htmlPage(
+      '404 Not Found',
+      '<main><h1>404 Not Found</h1><p>The requested resource was not found.</p></main>'
+    )
+  );
 };
 
 // ===== ROUTES =====
@@ -103,10 +105,8 @@ api.get('/states', async (req, res, next) => {
 
     let results = statesData.map((state) => {
       const facts = map.get(normalizeCode(state.code)) || [];
-
       const merged = { ...state };
 
-      // ONLY include funfacts if they have values
       if (facts.length > 0) {
         merged.funfacts = facts;
       }
@@ -318,10 +318,12 @@ api.delete('/states/:state/funfact', verifyStates, async (req, res) => {
 
 // ===== ROOT =====
 app.get('/', (req, res) => {
-  res
-    .status(200)
-    .type('html')
-    .sendFile(path.join(__dirname, 'public', 'index.html'));
+  res.status(200).type('html').send(
+    htmlPage(
+      'States API',
+      '<main><h1>States API</h1><p>Use the /api routes to access the data.</p></main>'
+    )
+  );
 });
 
 // ===== API =====
